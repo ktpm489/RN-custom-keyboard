@@ -1,7 +1,8 @@
 
+
 #import "RNCustomKeyboard.h"
-#import "RCTBridge+Private.h"
-#import "RCTUIManager.h"
+#import "React/RCTBridge+Private.h"
+#import "React/RCTUIManager.h"
 
 @implementation RNCustomKeyboard
 
@@ -57,7 +58,7 @@ RCT_EXPORT_METHOD(doDelete:(nonnull NSNumber *)reactTag) {
 
   UITextRange* range = view.selectedTextRange;
   if ([view comparePosition:range.start toPosition:range.end] == 0) {
-    range = [view textRangeFromPosition:range.start toPosition:[view positionFromPosition: range.start offset: 1]];
+    range = [view textRangeFromPosition:0 toPosition:[view positionFromPosition: range.start offset: 0]];
   }
   [view replaceRange:range withText:@""];
 }
@@ -68,9 +69,9 @@ RCT_EXPORT_METHOD(moveLeft:(nonnull NSNumber *)reactTag) {
   UITextRange* range = view.selectedTextRange;
   UITextPosition* position = range.start;
 
-  if ([view comparePosition:range.start toPosition:range.end] == 0) {
-    position = [view positionFromPosition: position, offset: -1];
-  }
+//  if ([view comparePosition:range.start toPosition:range.end] == 0) {
+//    position = [view positionFromPosition: position, offset: -1];
+//  }
 
   view.selectedTextRange = [view textRangeFromPosition: position toPosition:position];
 }
@@ -81,9 +82,9 @@ RCT_EXPORT_METHOD(moveRight:(nonnull NSNumber *)reactTag) {
   UITextRange* range = view.selectedTextRange;
   UITextPosition* position = range.end;
 
-  if ([view comparePosition:range.start toPosition:range.end] == 0) {
-    position = [view positionFromPosition: position, offset: 1];
-  }
+//  if ([view comparePosition:range.start toPosition:range.end] == 0) {
+//    position = [view positionFromPosition: position, offset: 1];
+//  }
 
   view.selectedTextRange = [view textRangeFromPosition: position toPosition:position];
 }
