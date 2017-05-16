@@ -58,7 +58,7 @@ RCT_EXPORT_METHOD(doDelete:(nonnull NSNumber *)reactTag) {
 
   UITextRange* range = view.selectedTextRange;
   if ([view comparePosition:range.start toPosition:range.end] == 0) {
-    range = [view textRangeFromPosition:0 toPosition:[view positionFromPosition: range.start offset: 0]];
+    range = [view textRangeFromPosition:view.beginningOfDocument toPosition:[view positionFromPosition: range.start offset: 0]];
   }
   [view replaceRange:range withText:@""];
 }
@@ -90,7 +90,7 @@ RCT_EXPORT_METHOD(moveRight:(nonnull NSNumber *)reactTag) {
 }
 
 RCT_EXPORT_METHOD(switchSystemKeyboard:(nonnull NSNumber*) reactTag) {
-  UITextView *view = [_bridge.uiManager viewForReactTag:reactTag];
+  UITextView *view = (UITextView*)[_bridge.uiManager viewForReactTag:reactTag];
   UIView* inputView = view.inputView;
   view.inputView = nil;
   [view reloadInputViews];
