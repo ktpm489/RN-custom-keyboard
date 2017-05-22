@@ -1,10 +1,12 @@
 package com.facebook.react.uimanager;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -30,8 +32,12 @@ public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
     Handler handle = new Handler(Looper.getMainLooper());
 
     private ReactEditText getEditById(int id) {
-        UIViewOperationQueue uii = this.getReactApplicationContext().getNativeModule(UIManagerModule.class).getUIImplementation().getUIViewOperationQueue();
-        return (ReactEditText) uii.getNativeViewHierarchyManager().resolveView(id);
+        try {
+            UIViewOperationQueue uii = this.getReactApplicationContext().getNativeModule(UIManagerModule.class).getUIImplementation().getUIViewOperationQueue();
+            return (ReactEditText) uii.getNativeViewHierarchyManager().resolveView(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }return null;
     }
 
     @ReactMethod
@@ -51,40 +57,59 @@ public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
                     @Override
                     public void onFocusChange(final View v, boolean hasFocus) {
                         if (hasFocus) {
-                            View keyboard = (View)edit.getTag(TAG_ID);
-                            if (keyboard.getParent() == null) {
-                                activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-                            }
                             UiThreadUtil.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);
+                                    View keyboard = (View)edit.getTag(TAG_ID);
+                                    if (keyboard.getParent() == null) {
+                                        activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                                    }else{
+                                        keyboard.setVisibility(View.VISIBLE);
+                                    }
                                 }
                             });
                         } else {
                             View keyboard = (View)edit.getTag(TAG_ID);
-                            if (keyboard.getParent() != null) {
-                                ((ViewGroup) keyboard.getParent()).removeView(keyboard);
-                            }
+//                            if (keyboard.getParent() != null) {
+//                                ((ViewGroup) keyboard.getParent()).removeView(keyboard);
+//                            }
+                            keyboard.setVisibility(View.GONE);
                         }
                     }
                 });
 
-                edit.setOnClickListener(new View.OnClickListener(){
+                edit.setOnTouchListener(new View.OnTouchListener() {
                     @Override
-                    public void onClick(final View v) {
-                        View keyboard = (View)edit.getTag(TAG_ID);
-                        if (keyboard.getParent() == null) {
-                            activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                    public boolean onTouch(View v, MotionEvent event) {
+                        if(event.getAction() == MotionEvent.ACTION_UP){
+                            edit.setFocusable(true);
+                            edit.setFocusableInTouchMode(true);
+                            edit.requestFocusFromJS();
+                            UiThreadUtil.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(edit.getWindowToken(), 0);
+                                    View keyboard = (View)edit.getTag(TAG_ID);
+                                    if (keyboard.getParent() == null) {
+                                        activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                                    }else {
+                                        keyboard.setVisibility(View.VISIBLE);
+                                    }
+                                }
+                            });
                         }
-                        UiThreadUtil.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);
-                            }
-                        });
+                        return false;
                     }
                 });
+
+//                edit.setOnClickListener(new View.OnClickListener(){
+//                    @Override
+//                    public void onClick(final View v) {
+//
+//
+//                    }
+//                });
 
                 edit.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
@@ -257,7 +282,8 @@ public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
 
                 View keyboard = (View)edit.getTag(TAG_ID);
                 if (keyboard.getParent() != null) {
-                    ((ViewGroup) keyboard.getParent()).removeView(keyboard);
+//                    ((ViewGroup) keyboard.getParent()).removeView(keyboard);
+                    keyboard.setVisibility(View.GONE);
                 }
 //                UiThreadUtil.runOnUiThread(new Runnable() {
 //
