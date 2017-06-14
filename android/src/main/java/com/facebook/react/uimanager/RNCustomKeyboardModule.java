@@ -1,7 +1,6 @@
 package com.facebook.react.uimanager;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,6 +17,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.UiThreadUtil;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.views.textinput.ReactEditText;
 
 public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
@@ -42,83 +42,109 @@ public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void install(final int tag, final String type) {
-        UiThreadUtil.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                final Activity activity = getCurrentActivity();
-                final ReactEditText edit = getEditById(tag);
-                if (edit == null) {
-                    return;
+        try {
+            UiThreadUtil.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    final Activity activity = getCurrentActivity();
+                    final ReactEditText edit = getEditById(tag);
+                    if (edit == null) {
+                        return;
+                    }
+
+                    edit.setTag(TAG_ID, createCustomKeyboard(activity, tag, type));
+
+                    edit.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                        @Override
+                        public void onFocusChange(final View v, boolean hasFocus) {
+                            if (hasFocus) {
+                                UiThreadUtil.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);
+                                            View keyboard = (View)edit.getTag(TAG_ID);
+                                            if(keyboard != null){
+                                                if (keyboard.getParent() == null) {
+                                                    activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                                                }else{
+                                                    keyboard.setVisibility(View.VISIBLE);
+                                                }
+                                            }
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                });
+                            } else {
+                                try {
+                                    View keyboard = (View)edit.getTag(TAG_ID);
+                                    //                            if (keyboard.getParent() != null) {
+                                    //                                ((ViewGroup) keyboard.getParent()).removeView(keyboard);
+                                    //                            }
+                                    if(keyboard != null){
+                                        keyboard.setVisibility(View.GONE);
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            try {
+                                getReactApplicationContext()
+                                        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                        .emit("CustomKeyboard_Resp", hasFocus);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+                    edit.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            if(event.getAction() == MotionEvent.ACTION_UP){
+    //                            callback.invoke(false);
+                                edit.setFocusable(true);
+                                edit.setFocusableInTouchMode(true);
+                                edit.requestFocusFromJS();
+                                UiThreadUtil.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(edit.getWindowToken(), 0);
+                                        View keyboard = (View)edit.getTag(TAG_ID);
+                                        if(keyboard != null){
+                                            if (keyboard.getParent() == null) {
+                                                activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                                            }else {
+                                                keyboard.setVisibility(View.VISIBLE);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            return false;
+                        }
+                    });
+
+    //                edit.setOnClickListener(new View.OnClickListener(){
+    //                    @Override
+    //                    public void onClick(final View v) {
+    //
+    //
+    //                    }
+    //                });
+
+                    edit.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(final View v) {
+                            return true;
+                        }
+                    });
                 }
-
-                edit.setTag(TAG_ID, createCustomKeyboard(activity, tag, type));
-
-                edit.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                    @Override
-                    public void onFocusChange(final View v, boolean hasFocus) {
-                        if (hasFocus) {
-                            UiThreadUtil.runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(), 0);
-                                    View keyboard = (View)edit.getTag(TAG_ID);
-                                    if (keyboard.getParent() == null) {
-                                        activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-                                    }else{
-                                        keyboard.setVisibility(View.VISIBLE);
-                                    }
-                                }
-                            });
-                        } else {
-                            View keyboard = (View)edit.getTag(TAG_ID);
-//                            if (keyboard.getParent() != null) {
-//                                ((ViewGroup) keyboard.getParent()).removeView(keyboard);
-//                            }
-                            keyboard.setVisibility(View.GONE);
-                        }
-                    }
-                });
-
-                edit.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        if(event.getAction() == MotionEvent.ACTION_UP){
-                            edit.setFocusable(true);
-                            edit.setFocusableInTouchMode(true);
-                            edit.requestFocusFromJS();
-                            UiThreadUtil.runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(edit.getWindowToken(), 0);
-                                    View keyboard = (View)edit.getTag(TAG_ID);
-                                    if (keyboard.getParent() == null) {
-                                        activity.addContentView(keyboard, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-                                    }else {
-                                        keyboard.setVisibility(View.VISIBLE);
-                                    }
-                                }
-                            });
-                        }
-                        return false;
-                    }
-                });
-
-//                edit.setOnClickListener(new View.OnClickListener(){
-//                    @Override
-//                    public void onClick(final View v) {
-//
-//
-//                    }
-//                });
-
-                edit.setOnLongClickListener(new View.OnLongClickListener() {
-                    @Override
-                    public boolean onLongClick(final View v) {
-                        return true;
-                    }
-                });
-            }
-        });
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     ReactRootView rootView = null;
@@ -274,17 +300,22 @@ public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
         UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                final Activity activity = getCurrentActivity();
-                final ReactEditText edit = getEditById(tag);
-                if (edit == null) {
-                    return;
-                }
 
-                View keyboard = (View)edit.getTag(TAG_ID);
-                if (keyboard.getParent() != null) {
-//                    ((ViewGroup) keyboard.getParent()).removeView(keyboard);
-                    keyboard.setVisibility(View.GONE);
-                }
+                try {
+                    final Activity activity = getCurrentActivity();
+                    final ReactEditText edit = getEditById(tag);
+                    if (edit == null) {
+                        return;
+                    }
+                    edit.clearFocus();
+                    View keyboard = (View)edit.getTag(TAG_ID);
+                    if(keyboard != null){
+                        if (keyboard.getParent() != null) {
+    //                    ((ViewGroup) keyboard.getParent()).removeView(keyboard);
+                            keyboard.setVisibility(View.GONE);
+                        }
+                    }
+
 //                UiThreadUtil.runOnUiThread(new Runnable() {
 //
 //                    @Override
@@ -292,6 +323,9 @@ public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
 //                        ((InputMethodManager) getReactApplicationContext().getSystemService(Activity.INPUT_METHOD_SERVICE)).showSoftInput(edit, InputMethodManager.SHOW_IMPLICIT);
 //                    }
 //                });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
