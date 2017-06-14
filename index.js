@@ -89,7 +89,6 @@ export class CustomTextInput extends Component {
   };
   render() {
     const { customKeyboardType, ...others } = this.props;
-    return Platform.OS == 'ios'?<TextInput {...others} ref={this.onRef}/>:
-        <TextInput {...others} ref={this.onRef}/>;
+    return <TextInput {...others} ref={this.onRef}/>;
   }
 }
