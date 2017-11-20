@@ -1,48 +1,48 @@
 
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import {
-  NativeModules,
-  TextInput,
-  findNodeHandle,
-  AppRegistry,
+    NativeModules,
+    TextInput,
+    findNodeHandle,
+    AppRegistry,
     Platform,DeviceEventEmitter
-} from 'react-native';
-import { EventEmitter } from 'events';
+} from 'react-native'
+import { EventEmitter } from 'events'
 
-const { CustomKeyboard} = NativeModules;
+const { CustomKeyboard} = NativeModules
 
 
 const {
-  install, uninstall,
-  insertText, backSpace, doDelete,
-  moveLeft, moveRight,
-  switchSystemKeyboard,
-} = CustomKeyboard;
+    install, uninstall,
+    insertText, backSpace, doDelete,
+    moveLeft, moveRight,
+    switchSystemKeyboard,
+} = CustomKeyboard
 
 export {
-  install, uninstall,
-  insertText, backSpace, doDelete,
-  moveLeft, moveRight,
-  switchSystemKeyboard,
+    install, uninstall,
+    insertText, backSpace, doDelete,
+    moveLeft, moveRight,
+    switchSystemKeyboard,
 };
 
-const keyboardTypeRegistry = {};
+const keyboardTypeRegistry = {}
 
 export function register(type, factory) {
-  keyboardTypeRegistry[type] = factory;
+  keyboardTypeRegistry[type] = factory
 }
 
 class CustomKeyboardContainer extends Component {
   render() {
-    const {tag, type} = this.props;
-    const factory = keyboardTypeRegistry[type];
+    const {tag, type} = this.props
+    const factory = keyboardTypeRegistry[type]
     if (!factory) {
-      console.warn(`Custom keyboard type ${type} not registered.`);
-      return null;
+      console.warn(`Custom keyboard type ${type} not registered.`)
+      return null
     }
-    const Comp = factory();
-    return <Comp tag={tag} />;
+    const Comp = factory()
+    return <Comp tag={tag} />
   }
 }
 
@@ -57,27 +57,43 @@ export class CustomTextInput extends Component {
   };
 
   constructor(props) {
-    super(props);
+    super(props)
     if(Platform.OS === 'android'){
       this.listener = DeviceEventEmitter.addListener('CustomKeyboard_Resp', resp => {
         if(resp){
           if(this.props.onFocus)
-            this.props.onFocus();
+            this.props.onFocus()
         }else{
           if(this.props.onBlur)
-            this.props.onBlur();
+            this.props.onBlur()
         }
       });
     }
   }
 
+  hideCustomKeyboard() {
+    try {
+      if (Platform.OS === 'android') {
+        switchSystemKeyboard(findNodeHandle(this.input))
+      } else {
+        // uninstall(findNodeHandle(this.input))
+      }
+
+    } catch (e) {
+    }
+  }
+
+  showCustomKeyboard(){
+    install(findNodeHandle(this.input), this.props.customKeyboardType)
+  }
+
   componentWillUnmount(){
-    this.listener && this.listener.remove();  //记得remove哦
-    this.listener = null;
+    this.listener && this.listener.remove()  //记得remove哦
+    this.listener = null
   }
 
   componentDidMount() {
-      install(findNodeHandle(this.input), this.props.customKeyboardType)
+    install(findNodeHandle(this.input), this.props.customKeyboardType)
   }
   componentWillReceiveProps(newProps) {
     if (newProps.customKeyboardType !== this.props.customKeyboardType) {
@@ -85,10 +101,10 @@ export class CustomTextInput extends Component {
     }
   }
   onRef = ref => {
-    this.input = ref;
-  };
+    this.input = ref
+  }
   render() {
-    const { customKeyboardType, ...others } = this.props;
-    return <TextInput {...others} ref={this.onRef}/>;
+    const { customKeyboardType, ...others } = this.props
+    return <TextInput {...others} ref={this.onRef}/>
   }
 }
