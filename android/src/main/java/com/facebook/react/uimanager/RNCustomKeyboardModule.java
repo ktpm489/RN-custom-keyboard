@@ -134,12 +134,12 @@ public class RNCustomKeyboardModule extends ReactContextBaseJavaModule {
     //                    }
     //                });
 
-                    edit.setOnLongClickListener(new View.OnLongClickListener() {
-                        @Override
-                        public boolean onLongClick(final View v) {
-                            return true;
-                        }
-                    });
+//                     edit.setOnLongClickListener(new View.OnLongClickListener() {
+//                         @Override
+//                         public boolean onLongClick(final View v) {
+//                             return true;
+//                         }
+//                     });
                 }
             });
         } catch (Exception e) {
