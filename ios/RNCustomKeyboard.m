@@ -22,7 +22,7 @@ RCT_EXPORT_METHOD(install:(nonnull NSNumber *)reactTag withType:(nonnull NSStrin
       @"type": keyboardType
     }
   ];
-  inputView.frame = CGRectMake(0, -252, 0,252);
+  inputView.frame = CGRectMake(-1000, -1000, 0, 252);
   UITextView *view = (UITextView*)[_bridge.uiManager viewForReactTag:reactTag];
   view = [self getRealTextView:view];
   view.inputView = inputView;
